@@ -1,0 +1,56 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: influxd
+  labels:
+    app: influxdb
+spec:
+  selector:
+    matchLabels:
+      app: influxdb
+  replicas: 1
+  template:
+    metadata:
+      name: influxdb
+      labels:
+        app: influxdb
+    spec:
+      containers:
+      - name: influxdb-pod
+        image: influxdb-image
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8086
+          name: influxdb
+        volumeMounts:
+          - mountPath: /var/lib/influxdb
+            name: influxdb-data
+          - mountPath: /var/run/docker.sock
+            name: docker-socket
+      volumes:
+      - name: influxdb-data
+        persistentVolumeClaim:
+          claimName: influxdb-pv-claim
+      - name: docker-socket
+        hostPath:
+          path : /var/run/docker.sock
+          type: Socket
+
+  
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: influxdbsvc
+  labels:
+    app: influxdb
+  annotations: 
+    metallb.universe.tf/allow-shared-ip: lkarine 
+spec:
+  selector:
+    app: influxdb
+  ports:
+  - port: 8086
+    targetPort: 8086
+         
